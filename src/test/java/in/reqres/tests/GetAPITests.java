@@ -12,7 +12,7 @@ public class GetAPITests {
         given().header("content-type", "application/json")
                 .baseUri("https://reqres.in").when().get("api/users?page=2")
                 .then().log().all().assertThat().statusCode(200)
-                .body("data[0].email",equalTo("micha.lawson@reqres.in"));
+                .body("data[0].email",equalTo("michael.lawson@reqres.in"));
 
     }
 }
