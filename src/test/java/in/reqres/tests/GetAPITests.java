@@ -8,6 +8,7 @@ import static org.hamcrest.Matchers.equalTo;
 public class GetAPITests {
     @Test
     public void shouldBeAbleToGetListOfUsers() {
+        System.out.println("This is my First Test game");
         System.out.println("This is my First Test Road");
         given().header("content-type", "application/json")
                 .baseUri("https://reqres.in").when().get("api/users?page=2")
