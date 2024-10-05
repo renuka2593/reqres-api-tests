@@ -1,191 +1,219 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Axe-core® Accessibility Results</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            color: #333;
-            margin: 0;
-            padding: 20px;
-        }
+import fs from 'fs';
 
-        h1, h2, h3 {
-            color: #2c3e50;
-        }
+interface Node {
+    html: string;
+}
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-        }
+interface Violation {
+    id: string;
+    impact: string;
+    description: string;
+    help: string;
+    helpUrl: string;
+    tags: string[];
+    nodes: Node[];
+}
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 40px;
-        }
+interface AccessibilityReport {
+    url: string;
+    environment: string;
+    browser: string;
+    violations: Violation[];
+    incomplete: Violation[];
+}
 
-        table, th, td {
-            border: 1px solid #ddd;
-        }
+function generateHtmlReport(reports: AccessibilityReport[]) {
+    // Begin the HTML content
+    let htmlContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Axe-core® Accessibility Reports</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #f4f4f9;
+                color: #333;
+                margin: 0;
+                padding: 20px;
+            }
+            h1, h2, h3 {
+                color: #2c3e50;
+            }
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                background-color: white;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+                margin-bottom: 40px;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 40px;
+            }
+            table, th, td {
+                border: 1px solid #ddd;
+            }
+            th, td {
+                padding: 12px;
+                text-align: left;
+            }
+            th {
+                background-color: #34495e;
+                color: white;
+            }
+            .high-impact {
+                color: red;
+                font-weight: bold;
+            }
+            .moderate-impact {
+                color: orange;
+                font-weight: bold;
+            }
+            .low-impact {
+                color: green;
+                font-weight: bold;
+            }
+            .violations, .incomplete {
+                margin-bottom: 40px;
+            }
+            .issue-details {
+                background-color: #f9f9f9;
+                padding: 15px;
+                border-radius: 5px;
+                margin-bottom: 20px;
+                border-left: 5px solid #e74c3c;
+            }
+            .code-snippet {
+                background-color: #eee;
+                padding: 10px;
+                border-radius: 5px;
+                font-family: monospace;
+            }
+            .learn-more {
+                color: #3498db;
+                text-decoration: none;
+            }
+            .footer {
+                text-align: center;
+                margin-top: 50px;
+            }
+            .footer p {
+                font-size: 14px;
+                color: #777;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Axe-core® Accessibility Reports</h1>
+    `;
 
-        th, td {
-            padding: 12px;
-            text-align: left;
-        }
+    // Loop through the reports array and build the report for each one
+    reports.forEach((report, reportIndex) => {
+        htmlContent += `
+        <div class="container">
+            <h2>Report ${reportIndex + 1}</h2>
+            <p><strong>Page URL:</strong> <a href="${report.url}" target="_blank">${report.url}</a></p>
+            <p><strong>Environment:</strong> ${report.environment}</p>
+            <p><strong>Browser:</strong> ${report.browser}</p>
 
-        th {
-            background-color: #34495e;
-            color: white;
-        }
+            <!-- Violations Section -->
+            <h3>Violations (Total: ${report.violations.length})</h3>
+            <table class="violations">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Description</th>
+                        <th>Axe Rule ID</th>
+                        <th>WCAG</th>
+                        <th>Impact</th>
+                        <th>Count</th>
+                    </tr>
+                </thead>
+                <tbody>`;
 
-        .high-impact {
-            color: red;
-            font-weight: bold;
-        }
+        report.violations.forEach((violation, violationIndex) => {
+            htmlContent += `
+                    <tr>
+                        <td>${violationIndex + 1}</td>
+                        <td>${violation.description}</td>
+                        <td>${violation.id}</td>
+                        <td>${violation.tags ? violation.tags.join(', ') : 'N/A'}</td>
+                        <td class="${violation.impact}-impact">${violation.impact}</td>
+                        <td>${violation.nodes.length}</td>
+                    </tr>`;
+        });
 
-        .moderate-impact {
-            color: orange;
-            font-weight: bold;
-        }
+        htmlContent += `
+                </tbody>
+            </table>
 
-        .low-impact {
-            color: green;
-            font-weight: bold;
-        }
+            <!-- Incomplete Section -->
+            <h3>Incomplete Issues (Total: ${report.incomplete.length})</h3>
+            <table class="incomplete">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Description</th>
+                        <th>Axe Rule ID</th>
+                        <th>WCAG</th>
+                        <th>Impact</th>
+                        <th>Count</th>
+                    </tr>
+                </thead>
+                <tbody>`;
 
-        .violations, .incomplete {
-            margin-bottom: 40px;
-        }
+        report.incomplete.forEach((incomplete, incompleteIndex) => {
+            htmlContent += `
+                    <tr>
+                        <td>${incompleteIndex + 1}</td>
+                        <td>${incomplete.description}</td>
+                        <td>${incomplete.id}</td>
+                        <td>${incomplete.tags ? incomplete.tags.join(', ') : 'N/A'}</td>
+                        <td class="${incomplete.impact}-impact">${incomplete.impact}</td>
+                        <td>${incomplete.nodes.length}</td>
+                    </tr>`;
+        });
 
-        .issue-details {
-            background-color: #f9f9f9;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            border-left: 5px solid #e74c3c;
-        }
+        htmlContent += `
+                </tbody>
+            </table>
 
-        .code-snippet {
-            background-color: #eee;
-            padding: 10px;
-            border-radius: 5px;
-            font-family: monospace;
-        }
+            <!-- Detailed Failed Issues Section -->
+            <h3>Failed Issues</h3>`;
+        
+        report.violations.forEach((violation) => {
+            htmlContent += `
+            <div class="issue-details">
+                <h4>${violation.description}</h4>
+                <p><strong>Rule:</strong> ${violation.id}</p>
+                <p><strong>Impact:</strong> <span class="${violation.impact}-impact">${violation.impact}</span></p>
+                <p><strong>Solution:</strong> ${violation.help}</p>
+                <div class="code-snippet">
+                    <p><strong>Example:</strong> ${violation.nodes[0] ? violation.nodes[0].html : 'N/A'}</p>
+                </div>
+                <a href="${violation.helpUrl}" class="learn-more" target="_blank">Learn more</a>
+            </div>`;
+        });
 
-        .learn-more {
-            color: #3498db;
-            text-decoration: none;
-        }
+        htmlContent += `</div>`;
+    });
 
-        .footer {
-            text-align: center;
-            margin-top: 50px;
-        }
-
-        .footer p {
-            font-size: 14px;
-            color: #777;
-        }
-
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Axe-core® Accessibility Report</h1>
-        <p>Page URL: <a href="http://example.com" target="_blank">http://example.com</a></p>
-        <p>Test Case: Full page analysis</p>
-        <p>Steps: 
-            <ol>
-                <li>Open page with all rules enabled</li>
-                <li>Analyze full page for violations and incomplete issues</li>
-            </ol>
-        </p>
-
-        <h2>Violations (Total: 6)</h2>
-        <table class="violations">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Description</th>
-                    <th>Axe Rule ID</th>
-                    <th>WCAG</th>
-                    <th>Impact</th>
-                    <th>Count</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Dynamically add violations here -->
-                <tr>
-                    <td>1</td>
-                    <td>&lt;html&gt; element must have a lang attribute</td>
-                    <td>html-has-lang</td>
-                    <td>WCAG 2 Level A, WCAG 3.1.1</td>
-                    <td class="high-impact">Serious</td>
-                    <td>1</td>
-                </tr>
-                <tr>
-                    <td>2</td>
-                    <td>Document must have one main landmark</td>
-                    <td>landmark-one-main</td>
-                    <td>Best practice</td>
-                    <td class="moderate-impact">Moderate</td>
-                    <td>1</td>
-                </tr>
-                <!-- Add more violations as needed -->
-            </tbody>
-        </table>
-
-        <h2>Incomplete Issues</h2>
-        <table class="incomplete">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Description</th>
-                    <th>Axe Rule ID</th>
-                    <th>WCAG</th>
-                    <th>Impact</th>
-                    <th>Count</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Dynamically add incomplete issues here -->
-                <tr>
-                    <td>1</td>
-                    <td>Ensure button has discernible text</td>
-                    <td>button-name</td>
-                    <td>WCAG 2.1 AA, WCAG 4.1.2</td>
-                    <td class="low-impact">Low</td>
-                    <td>2</td>
-                </tr>
-                <!-- Add more incomplete issues as needed -->
-            </tbody>
-        </table>
-
-        <h2>Failed Issues</h2>
-        <div class="issue-details">
-            <h3>&lt;html&gt; element must have a lang attribute</h3>
-            <p>Rule: <strong>html-has-lang</strong></p>
-            <p>WCAG: WCAG 2 Level A, WCAG 3.1.1</p>
-            <p>Impact: <span class="high-impact">Serious</span></p>
-            <p>Solution: Ensure that the &lt;html&gt; element has a lang attribute</p>
-            <p>Example Code:</p>
-            <div class="code-snippet">
-                &lt;html lang="en"&gt;
-            </div>
-            <p>Learn more: <a href="https://dequeuniversity.com/rules/axe/4.10/html-has-lang" target="_blank" class="learn-more">WCAG 2 Level A, WCAG 3.1.1</a></p>
-        </div>
-
+    // Footer section
+    htmlContent += `
         <div class="footer">
-            <p>&copy; 2024 Accessibility Report | Generated with Playwright Axe-core</p>
+            <p>&copy; 2024 Accessibility Reports | Generated with Playwright Axe-core</p>
         </div>
-    </div>
-</body>
-</html>
+    </body>
+    </html>
+    `;
+
+    // Write the content to an HTML file
+    fs.writeFileSync('accessibility-report.html', htmlContent);
+    console.log('Accessibility report has been generated successfully!');
+}
