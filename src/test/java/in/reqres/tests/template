@@ -1,92 +1,191 @@
-import fs from 'fs';
-import path from 'path';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Axe-core® Accessibility Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
 
-function generateAccessibilityReport(results: any) {
-  const htmlContent = `
-  <html>
-  <head>
-      <title>Axe-core Accessibility Results for TEST project</title>
-      <style>
-          body { font-family: Arial, sans-serif; }
-          table { width: 100%; border-collapse: collapse; }
-          th, td { padding: 10px; text-align: left; border: 1px solid #ddd; }
-          th { background-color: #f4f4f4; }
-          h1, h2 { color: #333; }
-          .serious { color: red; }
-          .moderate { color: orange; }
-          .best-practice { color: blue; }
-          .violation { margin-bottom: 20px; }
-      </style>
-  </head>
-  <body>
-      <h1>Axe-core Accessibility Results for TEST project</h1>
-      <p>Page URL: <a href="${results.url}">${results.url}</a></p>
-      <p>Test Case: Full page analysis</p>
-      <p>Steps:</p>
-      <ol>
-          <li>Open the page ${results.url}</li>
-          <li>Analyze full page with all rules enabled</li>
-      </ol>
-      
-      <h2>axe-core found ${results.violations.length} violations</h2>
-      <table>
-          <tr>
-              <th>#</th>
-              <th>Description</th>
-              <th>Axe Rule ID</th>
-              <th>WCAG</th>
-              <th>Impact</th>
-              <th>Count</th>
-          </tr>
-          ${results.violations.map((violation: any, index: number) => `
-          <tr>
-              <td>${index + 1}</td>
-              <td>${violation.description}</td>
-              <td>${violation.id}</td>
-              <td>${violation.tags.includes('wcag2a') ? 'WCAG 2 Level A' : 'Best Practice'}</td>
-              <td class="${violation.impact}">${violation.impact}</td>
-              <td>${violation.nodes.length}</td>
-          </tr>
-          `).join('')}
-      </table>
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
 
-      <h2>Failed</h2>
-      ${results.violations.map((violation: any) => `
-      <div class="violation">
-          <h3>${violation.help}</h3>
-          <p>${violation.description}</p>
-          <p>WCAG: <a href="${violation.helpUrl}">${violation.helpUrl}</a></p>
-          <table>
-              <tr>
-                  <th>Element location</th>
-                  <th>Issue Description</th>
-              </tr>
-              ${violation.nodes.map((node: any) => `
-              <tr>
-                  <td>${node.target.join(', ')}</td>
-                  <td>${node.failureSummary}</td>
-              </tr>
-              `).join('')}
-          </table>
-          ${violation.nodes.map((node: any) => node.any.map((anyCheck: any) => `
-          <div>
-              <h4>Color Contrast Issue</h4>
-              <p>Element has insufficient color contrast:</p>
-              <ul>
-                  <li>Foreground Color: ${anyCheck.data.fgColor}</li>
-                  <li>Background Color: ${anyCheck.data.bgColor}</li>
-                  <li>Contrast Ratio: ${anyCheck.data.contrastRatio}</li>
-                  <li>Expected Contrast Ratio: ${anyCheck.data.expectedContrastRatio}</li>
-                  <li>Font Size: ${anyCheck.data.fontSize}</li>
-                  <li>Font Weight: ${anyCheck.data.fontWeight}</li>
-              </ul>
-          </div>
-          `).join('')).join('')}
-      </div>
-      `).join('')}
-  </body>
-  </html>
-  `;
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
 
-  fs.writeFileSync(path.join(__dirname, 'accessibility-report.html'), htmlContent);
-}
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #34495e;
+            color: white;
+        }
+
+        .high-impact {
+            color: red;
+            font-weight: bold;
+        }
+
+        .moderate-impact {
+            color: orange;
+            font-weight: bold;
+        }
+
+        .low-impact {
+            color: green;
+            font-weight: bold;
+        }
+
+        .violations, .incomplete {
+            margin-bottom: 40px;
+        }
+
+        .issue-details {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 5px solid #e74c3c;
+        }
+
+        .code-snippet {
+            background-color: #eee;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+
+        .learn-more {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .footer p {
+            font-size: 14px;
+            color: #777;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Axe-core® Accessibility Report</h1>
+        <p>Page URL: <a href="http://example.com" target="_blank">http://example.com</a></p>
+        <p>Test Case: Full page analysis</p>
+        <p>Steps: 
+            <ol>
+                <li>Open page with all rules enabled</li>
+                <li>Analyze full page for violations and incomplete issues</li>
+            </ol>
+        </p>
+
+        <h2>Violations (Total: 6)</h2>
+        <table class="violations">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Description</th>
+                    <th>Axe Rule ID</th>
+                    <th>WCAG</th>
+                    <th>Impact</th>
+                    <th>Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Dynamically add violations here -->
+                <tr>
+                    <td>1</td>
+                    <td>&lt;html&gt; element must have a lang attribute</td>
+                    <td>html-has-lang</td>
+                    <td>WCAG 2 Level A, WCAG 3.1.1</td>
+                    <td class="high-impact">Serious</td>
+                    <td>1</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>Document must have one main landmark</td>
+                    <td>landmark-one-main</td>
+                    <td>Best practice</td>
+                    <td class="moderate-impact">Moderate</td>
+                    <td>1</td>
+                </tr>
+                <!-- Add more violations as needed -->
+            </tbody>
+        </table>
+
+        <h2>Incomplete Issues</h2>
+        <table class="incomplete">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Description</th>
+                    <th>Axe Rule ID</th>
+                    <th>WCAG</th>
+                    <th>Impact</th>
+                    <th>Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Dynamically add incomplete issues here -->
+                <tr>
+                    <td>1</td>
+                    <td>Ensure button has discernible text</td>
+                    <td>button-name</td>
+                    <td>WCAG 2.1 AA, WCAG 4.1.2</td>
+                    <td class="low-impact">Low</td>
+                    <td>2</td>
+                </tr>
+                <!-- Add more incomplete issues as needed -->
+            </tbody>
+        </table>
+
+        <h2>Failed Issues</h2>
+        <div class="issue-details">
+            <h3>&lt;html&gt; element must have a lang attribute</h3>
+            <p>Rule: <strong>html-has-lang</strong></p>
+            <p>WCAG: WCAG 2 Level A, WCAG 3.1.1</p>
+            <p>Impact: <span class="high-impact">Serious</span></p>
+            <p>Solution: Ensure that the &lt;html&gt; element has a lang attribute</p>
+            <p>Example Code:</p>
+            <div class="code-snippet">
+                &lt;html lang="en"&gt;
+            </div>
+            <p>Learn more: <a href="https://dequeuniversity.com/rules/axe/4.10/html-has-lang" target="_blank" class="learn-more">WCAG 2 Level A, WCAG 3.1.1</a></p>
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2024 Accessibility Report | Generated with Playwright Axe-core</p>
+        </div>
+    </div>
+</body>
+</html>
