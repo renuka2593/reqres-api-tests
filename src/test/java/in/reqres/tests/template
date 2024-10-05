@@ -1,0 +1,92 @@
+import fs from 'fs';
+import path from 'path';
+
+function generateAccessibilityReport(results: any) {
+  const htmlContent = `
+  <html>
+  <head>
+      <title>Axe-core Accessibility Results for TEST project</title>
+      <style>
+          body { font-family: Arial, sans-serif; }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { padding: 10px; text-align: left; border: 1px solid #ddd; }
+          th { background-color: #f4f4f4; }
+          h1, h2 { color: #333; }
+          .serious { color: red; }
+          .moderate { color: orange; }
+          .best-practice { color: blue; }
+          .violation { margin-bottom: 20px; }
+      </style>
+  </head>
+  <body>
+      <h1>Axe-core Accessibility Results for TEST project</h1>
+      <p>Page URL: <a href="${results.url}">${results.url}</a></p>
+      <p>Test Case: Full page analysis</p>
+      <p>Steps:</p>
+      <ol>
+          <li>Open the page ${results.url}</li>
+          <li>Analyze full page with all rules enabled</li>
+      </ol>
+      
+      <h2>axe-core found ${results.violations.length} violations</h2>
+      <table>
+          <tr>
+              <th>#</th>
+              <th>Description</th>
+              <th>Axe Rule ID</th>
+              <th>WCAG</th>
+              <th>Impact</th>
+              <th>Count</th>
+          </tr>
+          ${results.violations.map((violation: any, index: number) => `
+          <tr>
+              <td>${index + 1}</td>
+              <td>${violation.description}</td>
+              <td>${violation.id}</td>
+              <td>${violation.tags.includes('wcag2a') ? 'WCAG 2 Level A' : 'Best Practice'}</td>
+              <td class="${violation.impact}">${violation.impact}</td>
+              <td>${violation.nodes.length}</td>
+          </tr>
+          `).join('')}
+      </table>
+
+      <h2>Failed</h2>
+      ${results.violations.map((violation: any) => `
+      <div class="violation">
+          <h3>${violation.help}</h3>
+          <p>${violation.description}</p>
+          <p>WCAG: <a href="${violation.helpUrl}">${violation.helpUrl}</a></p>
+          <table>
+              <tr>
+                  <th>Element location</th>
+                  <th>Issue Description</th>
+              </tr>
+              ${violation.nodes.map((node: any) => `
+              <tr>
+                  <td>${node.target.join(', ')}</td>
+                  <td>${node.failureSummary}</td>
+              </tr>
+              `).join('')}
+          </table>
+          ${violation.nodes.map((node: any) => node.any.map((anyCheck: any) => `
+          <div>
+              <h4>Color Contrast Issue</h4>
+              <p>Element has insufficient color contrast:</p>
+              <ul>
+                  <li>Foreground Color: ${anyCheck.data.fgColor}</li>
+                  <li>Background Color: ${anyCheck.data.bgColor}</li>
+                  <li>Contrast Ratio: ${anyCheck.data.contrastRatio}</li>
+                  <li>Expected Contrast Ratio: ${anyCheck.data.expectedContrastRatio}</li>
+                  <li>Font Size: ${anyCheck.data.fontSize}</li>
+                  <li>Font Weight: ${anyCheck.data.fontWeight}</li>
+              </ul>
+          </div>
+          `).join('')).join('')}
+      </div>
+      `).join('')}
+  </body>
+  </html>
+  `;
+
+  fs.writeFileSync(path.join(__dirname, 'accessibility-report.html'), htmlContent);
+}
