@@ -2,6 +2,7 @@ import fs from 'fs';
 
 interface Node {
     html: string;
+    target: string[];
 }
 
 interface Violation {
@@ -79,9 +80,6 @@ function generateHtmlReport(reports: AccessibilityReport[]) {
                 color: green;
                 font-weight: bold;
             }
-            .violations, .incomplete {
-                margin-bottom: 40px;
-            }
             .issue-details {
                 background-color: #f9f9f9;
                 padding: 15px;
@@ -123,81 +121,73 @@ function generateHtmlReport(reports: AccessibilityReport[]) {
             <p><strong>Browser:</strong> ${report.browser}</p>
 
             <!-- Violations Section -->
-            <h3>Violations (Total: ${report.violations.length})</h3>
-            <table class="violations">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Description</th>
-                        <th>Axe Rule ID</th>
-                        <th>WCAG</th>
-                        <th>Impact</th>
-                        <th>Count</th>
-                    </tr>
-                </thead>
-                <tbody>`;
-
+            <h3>Violations</h3>`;
+        
         report.violations.forEach((violation, violationIndex) => {
             htmlContent += `
+            <div class="issue-details">
+                <h4>${violation.description} (${violation.impact})</h4>
+                <p><strong>Rule ID:</strong> ${violation.id}</p>
+                <p><strong>Help:</strong> ${violation.help}</p>
+                <p><strong>Learn more:</strong> <a href="${violation.helpUrl}" class="learn-more" target="_blank">${violation.helpUrl}</a></p>
+                
+                <h5>Affected Elements:</h5>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>HTML</th>
+                            <th>Target</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+            
+            violation.nodes.forEach(node => {
+                htmlContent += `
                     <tr>
-                        <td>${violationIndex + 1}</td>
-                        <td>${violation.description}</td>
-                        <td>${violation.id}</td>
-                        <td>${violation.tags ? violation.tags.join(', ') : 'N/A'}</td>
-                        <td class="${violation.impact}-impact">${violation.impact}</td>
-                        <td>${violation.nodes.length}</td>
+                        <td>${node.html}</td>
+                        <td>${node.target.join(', ')}</td>
                     </tr>`;
+            });
+
+            htmlContent += `
+                    </tbody>
+                </table>
+            </div>`;
         });
 
+        // Incomplete Issues Section
         htmlContent += `
-                </tbody>
-            </table>
-
-            <!-- Incomplete Section -->
-            <h3>Incomplete Issues (Total: ${report.incomplete.length})</h3>
-            <table class="incomplete">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Description</th>
-                        <th>Axe Rule ID</th>
-                        <th>WCAG</th>
-                        <th>Impact</th>
-                        <th>Count</th>
-                    </tr>
-                </thead>
-                <tbody>`;
-
+            <h3>Incomplete Issues</h3>`;
+        
         report.incomplete.forEach((incomplete, incompleteIndex) => {
             htmlContent += `
-                    <tr>
-                        <td>${incompleteIndex + 1}</td>
-                        <td>${incomplete.description}</td>
-                        <td>${incomplete.id}</td>
-                        <td>${incomplete.tags ? incomplete.tags.join(', ') : 'N/A'}</td>
-                        <td class="${incomplete.impact}-impact">${incomplete.impact}</td>
-                        <td>${incomplete.nodes.length}</td>
-                    </tr>`;
-        });
-
-        htmlContent += `
-                </tbody>
-            </table>
-
-            <!-- Detailed Failed Issues Section -->
-            <h3>Failed Issues</h3>`;
-        
-        report.violations.forEach((violation) => {
-            htmlContent += `
             <div class="issue-details">
-                <h4>${violation.description}</h4>
-                <p><strong>Rule:</strong> ${violation.id}</p>
-                <p><strong>Impact:</strong> <span class="${violation.impact}-impact">${violation.impact}</span></p>
-                <p><strong>Solution:</strong> ${violation.help}</p>
-                <div class="code-snippet">
-                    <p><strong>Example:</strong> ${violation.nodes[0] ? violation.nodes[0].html : 'N/A'}</p>
-                </div>
-                <a href="${violation.helpUrl}" class="learn-more" target="_blank">Learn more</a>
+                <h4>${incomplete.description} (${incomplete.impact})</h4>
+                <p><strong>Rule ID:</strong> ${incomplete.id}</p>
+                <p><strong>Help:</strong> ${incomplete.help}</p>
+                <p><strong>Learn more:</strong> <a href="${incomplete.helpUrl}" class="learn-more" target="_blank">${incomplete.helpUrl}</a></p>
+                
+                <h5>Affected Elements:</h5>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>HTML</th>
+                            <th>Target</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+            incomplete.nodes.forEach(node => {
+                htmlContent += `
+                    <tr>
+                        <td>${node.html}</td>
+                        <td>${node.target.join(', ')}</td>
+                    </tr>`;
+            });
+
+            htmlContent += `
+                    </tbody>
+                </table>
             </div>`;
         });
 
